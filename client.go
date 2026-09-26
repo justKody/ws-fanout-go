@@ -22,7 +22,7 @@ const (
 	pongWait       = 60 * time.Second
 	maxMessageSize = 512
 	pingPeriod     = (pongWait * 9) / 10
-	writeWait
+	writeWait      = 10 * time.Second
 )
 
 var upgrader = websocket.Upgrader{
@@ -96,6 +96,7 @@ func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 
 	defer func() {
+		ticker.Stop()
 		c.conn.Close()
 	}()
 
@@ -116,17 +117,19 @@ func (c *Client) writePump() {
 			w.Write(msg)
 
 			// performance
+			n := len(c.send)
 			for i := 0; i < n; i++ {
 				w.Write(msg)
 			}
 
-			if err != w.Close(): err != nil {
+			if err = w.Close(); err != nil {
+				return
+			}
+		case <-ticker.C:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		}
-
-	case <- ticker.C:
-		c.conn.set
 	}
-
 }
