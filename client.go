@@ -87,7 +87,7 @@ func (c *Client) readPump() {
 			log.Printf("error: %v", err)
 		}
 
-		c.hub.broadcast <- &Message{ClientID: c.id, Text: msg.Text}
+		c.hub.broadcast <- &Message{ClientID: c.id, Text: msg.Text, SendTo: msg.SendTo}
 	}
 }
 

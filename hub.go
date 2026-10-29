@@ -9,10 +9,12 @@ import (
 type Message struct {
 	ClientID string
 	Text     string
+	SendTo   string
 }
 
 type WSMessage struct {
 	Text    string      `json:"text"`
+	SendTo  string      `json:"send_to"`
 	Headers interface{} `json: "HEADERS"`
 }
 
@@ -53,6 +55,11 @@ func (h *Hub) Run() {
 				log.Printf("broadcast: %v", err)
 				continue
 			}
+			if msg.SendTo != "" {
+				if client := h.findClient(msg.SendTo); client != nil {
+					client.send <- payload
+				}
+			}
 
 			h.Lock()
 			for client := range h.clients {
@@ -66,4 +73,13 @@ func (h *Hub) Run() {
 			h.Unlock()
 		}
 	}
+}
+
+func (h *Hub) findClient(id string) *Client {
+	for client := range h.clients {
+		if client.id == id {
+			return client
+		}
+	}
+	return nil
 }
